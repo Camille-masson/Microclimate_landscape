@@ -1,0 +1,201 @@
+---
+title: "ibex_collar"
+format: html
+editor: visual
+editor_options: 
+  chunk_output_type: console
+---
+
+Dans la même logique que pour les données de suivi des animaux domestiques, on va regarder les relations entre les températures enregistrées par les colliers GPS des animaux sauvages (Capra ibex) et les données macro VS microclimatiques.
+
+```{r}
+# Automatically install and load required packages
+if (!require("pacman")) install.packages("pacman")
+pacman::p_load(tidyverse, ggplot2, dplyr)
+
+# Clean up the workspace
+rm(list = ls())
+gc()
+```
+
+
+# Extract gps locations and collar temperatures
+
+```{r}
+# Load ibex GPS data
+load("S:/LECA/EQUIPE-BIOM/BIOGEOCHEM/PhD_EMILIE/data/ofb/gps/ChaBau_MouCar_BouBel_IsaOrl_2025-10-16_.Rdata")
+# Clean and select data
+data <- data %>% 
+  #Select ibex data
+  dplyr::filter(site == "BouBel") %>% 
+  #Change variable format
+  dplyr::mutate(loc_timestamp_utc = as.POSIXct(loc_timestamp_utc, tz = "UTC", format = "%Y-%m-%d %H:%M:%S"),
+                day = format(loc_timestamp_utc, "%Y%m%d"),
+                hour = format(loc_timestamp_utc, "%H")) %>% 
+  #Delete anomaly
+  dplyr::filter(loc_validated_manu %in% "normal" &
+           !is.na(loc_timestamp_utc) &
+           !is.na(loc_x_lb93) &
+           !is.na(loc_y_lb93)) %>%
+  #Select summer data
+  dplyr::filter(month(loc_date) %in% c(7,8)) %>% 
+  # Select location and temperature data 
+  dplyr::select(ani_sex, ani_id, loc_date, loc_timestamp_utc, day, hour, loc_x_lb93, loc_y_lb93, loc_temperature) %>% 
+  filter(loc_timestamp_utc >= as.POSIXct("2019-08-01 00:00:00", tz = "UTC"),
+         loc_timestamp_utc <  as.POSIXct("2019-08-08 00:00:00", tz = "UTC"))
+```
+
+# Extract s2m air temperature for each GPS location
+
+```{r}
+s2m_dir <- "S:/LECA/EQUIPE-BIOM/BIOGEOCHEM/PhD_EMILIE/data/belledonne/climate/temperature/s2m/5M"
+
+data$temp_S2M <- NA_real_
+days <- unique(data$day)
+  
+for (d in days) {
+    
+    tif_file <- file.path(s2m_dir, paste0("BELLEDONNE_TMP_5M_", d, ".tif"))
+    if (!file.exists(tif_file)) {
+      warning("Fichier S2M manquant : ", tif_file)
+      next
+    }
+    
+    r <- terra::rast(tif_file)           # stack 24 bandes
+    noms_couches <- names(r)             # "YYYYMMDD00", "YYYYMMDD01", ...
+    
+    # indices des lignes de ce jour
+    idx_day <- which(data$day == d)
+    heures_jour <- unique(data$hour[idx_day])
+    
+    # boucle sur les heures de ce jour
+    for (h in heures_jour) {
+      
+      layer_name <- paste0(d, h)         # ex : 2019070204
+      
+      if (!(layer_name %in% noms_couches)) {
+        warning("Couche ", layer_name, " absente dans ", tif_file)
+        next
+      }
+      
+      lyr <- r[[layer_name]]
+      
+      # lignes de ce jour ET de cette heure
+      idx <- which(data$day == d & data$hour == h)
+      
+      # coordonnées des points (on utilise x / y du raster S2M)
+      coords <- cbind(data$loc_x_lb93[idx], data$loc_y_lb93[idx])
+      
+      ext  <- terra::extract(lyr, coords)
+      vals <- ext[, 1]   # il n'y a qu'une seule colonne, la valeur raster
+      
+      data$temp_S2M[idx] <- vals
+    }
+}
+```
+
+# Extract insolation anomaly for each GPS location
+
+```{r}
+ins_dir <- "S:/LECA/EQUIPE-BIOM/BIOGEOCHEM/PhD_EMILIE/data/belledonne/climate/insolation/s2m/5M/anomaly"
+
+data$anom_thermal_refuge <- NA_real_
+days <- unique(data$day)
+
+for (d in days) {
+    
+    # Exemple de nom de fichier :
+    # "BELLEDONNE_ANOMINS_25M_20190821.tif"
+    tif_file <- file.path(
+      ins_dir,
+      paste0("BELLEDONNE_ANOMINS_25M_", d, ".tif")
+    )
+    
+    if (!file.exists(tif_file)) {
+      warning("Fichier thermal_refuge manquant : ", tif_file)
+      next
+    }
+    
+    r <- terra::rast(tif_file)   # stack avec les heures du jour
+    noms_couches <- names(r)     # ex : "201908210600", "201908210700", ...
+    
+    # indices des lignes de ce jour
+    idx_day <- which(data$day == d)
+    heures_jour <- unique(data$hour[idx_day])
+    
+    # 6. Boucle sur les heures de ce jour
+    for (h in heures_jour) {
+      
+      # Les bandes sont nommées YYYYMMDDHHMM -> on ajoute "00" pour les minutes
+      layer_name <- paste0(d, h, "00")
+      
+      if (!(layer_name %in% noms_couches)) {
+        warning("Couche ", layer_name, " absente dans ", tif_file)
+        next
+      }
+      
+      lyr <- r[[layer_name]]
+      
+      # lignes de ce jour ET de cette heure
+      idx <- which(data$day == d & data$hour == h)
+      
+      # coordonnées des points (doivent être dans le même système que le raster)
+      coords <- cbind(data$loc_x_lb93[idx], data$loc_y_lb93[idx])
+      
+      ext  <- terra::extract(lyr, coords)
+      vals <- ext[, 1]   # une seule colonne : la valeur d'anomalie
+      
+      data$anom_thermal_refuge[idx] <- vals
+    }
+  }
+```
+
+# Vizualisation
+
+```{r}
+temp_collar_7j <- data %>% 
+  #filter(loc_timestamp_utc >= as.POSIXct("2019-08-01 00:00:00", tz = "UTC"),
+  #       loc_timestamp_utc <  as.POSIXct("2019-08-08 00:00:00", tz = "UTC")) %>% 
+  mutate(ani_id = factor(ani_id),
+         anse_id = factor(anse_id))
+
+## facteur pour ramener l'anomalie sur l'échelle de la température
+range_temp <- range(temp_collar_7j$temp, na.rm = TRUE)
+range_anom <- range(temp_collar_7j$anom_thermal_refuge, na.rm = TRUE)
+
+if (diff(range_anom) == 0) {
+  coef_anom <- 1
+} else {
+  coef_anom <- diff(range_temp) / diff(range_anom)
+}
+
+ggplot(temp_collar_7j, aes(x = loc_timestamp_utc)) +
+  # Température collier
+  geom_line(aes(y = loc_temperature, colour = ani_id), linewidth = 0.6, alpha = 0.9) +
+  # Température S2M
+  geom_line(aes(y = temp_S2M), colour = "black", linewidth = 0.8) +
+  # Anomalie d'insolation (axe secondaire)
+  geom_line(aes(y = anom_thermal_refuge * coef_anom),
+            colour = "red", linewidth = 0.8, linetype = "dashed") +
+  scale_x_datetime(
+    date_breaks = "2 hours",
+    date_labels = "%d %b\n%H:%M"
+  ) +
+  scale_y_continuous(
+    name = "Température (°C)",
+    sec.axis = sec_axis(~ . / coef_anom,
+                        name = "Anomalie d'insolation")
+  ) +
+  facet_wrap(~ ani_id, nrow = 1) +
+  labs(
+    x = "Date / heure",
+    colour = "Collier",
+    title = "Température collier, S2M et anomalie d'insolation – 01 Août 2019"
+  ) +
+  theme_bw() +
+  theme(
+    legend.position = "none",
+    axis.text.x = element_text(angle = 45, hjust = 1)
+  )
+```
+
