@@ -1,0 +1,435 @@
+---
+title: "Visualisation"
+format: html
+editor: visual
+---
+
+## Comparaison : température du collier et S2M
+
+Dans cette partie, nous comparons la température mesurée par les colliers GPS des moutons à celle du modèle S2M.\
+Pour cela, nous avons associé à chaque localisation GPS la température issue de S2M (pas de température horaire disponible).\
+Nous filtrons en NA les températures S2M lorsque le filtre de Bjorneraas indique une erreur GPS, afin d’éviter d’associer une valeur de température fausse.
+
+Nous examinons ensuite, à plusieurs échelles, la cohérence entre les deux sources de données.
+
+## A l'échelle de la journée
+
+```{r}
+#| message: false
+#| warning: false
+#| include: false
+library(dplyr)
+source("config.R")
+YEAR = 2019
+alpage = "Sept-Laux"
+alpages = "Sept-Laux"
+## INPUT ----
+  # Creation of the subfolder to store the sampling periods
+  collar_temp_S2M_dir <- file.path(output_dir, "2. Collars_temperature_S2M")
+  input_data_file <- file.path(collar_temp_S2M_dir, paste0("Collars_temperature_S2M_",YEAR,"_",alpage,".rds"))
+```
+
+### Le 17 Juillet 2019
+
+```{r}
+#| warning: false
+temp_collar <- readRDS(input_data_file) %>%
+  mutate(temp_S2M = ifelse(infoloc == "pb_bjorneraas", NA_real_, temp_S2M))
+temp_collar_1j <- temp_collar %>% 
+  filter(date >= as.POSIXct("2019-07-17 00:00:00", tz = "UTC"),
+         date <  as.POSIXct("2019-07-18 00:00:00", tz = "UTC")) %>% 
+  filter(!(id_gps %in% c("b2","b6")))
+
+library(dplyr)
+library(ggplot2)
+
+# On s'assure que id_gps est un facteur (plus propre pour les couleurs / facets)
+temp_collar_1j <- temp_collar_1j %>%
+  mutate(id_gps = factor(id_gps))
+
+ggplot(temp_collar_1j, aes(x = date)) +
+  # Température collier : une courbe par collier (couleur inutile mais possible)
+  geom_line(aes(y = temp, colour = id_gps), linewidth = 0.6, alpha = 0.9) +
+  # Température S2M : une courbe noire
+  geom_line(aes(y = temp_S2M), colour = "black", linewidth = 0.8) +
+  scale_x_datetime(
+    date_breaks = "2 hours",
+    date_labels = "%d %b\n%H:%M"
+  ) +
+  facet_wrap(~ id_gps, nrow = 1) +  
+  labs(
+    x = "Date / heure",
+    y = "Température (°C)",
+    colour = "Collier",
+    title = "Température collier vs S2M 17 juillet 2019"
+  ) +
+  theme_bw() +
+  theme(
+    legend.position = "none",        # chaque panel a déjà son id_gps en titre
+    axis.text.x = element_text(angle = 45, hjust = 1)
+  )
+
+```
+
+### Le 29 Juillet 2019
+
+```{r}
+#| warning: false
+temp_collar <- readRDS(input_data_file) %>%
+  mutate(temp_S2M = ifelse(infoloc == "pb_bjorneraas", NA_real_, temp_S2M))
+temp_collar_1j <- temp_collar %>% 
+  filter(date >= as.POSIXct("2019-07-29 00:00:00", tz = "UTC"),
+         date <  as.POSIXct("2019-07-30 00:00:00", tz = "UTC")) %>% 
+  filter(!(id_gps %in% c("b2","b6")))
+
+library(dplyr)
+library(ggplot2)
+
+# On s'assure que id_gps est un facteur (plus propre pour les couleurs / facets)
+temp_collar_1j <- temp_collar_1j %>%
+  mutate(id_gps = factor(id_gps))
+
+ggplot(temp_collar_1j, aes(x = date)) +
+  # Température collier : une courbe par collier (couleur inutile mais possible)
+  geom_line(aes(y = temp, colour = id_gps), linewidth = 0.6, alpha = 0.9) +
+  # Température S2M : une courbe noire
+  geom_line(aes(y = temp_S2M), colour = "black", linewidth = 0.8) +
+  scale_x_datetime(
+    date_breaks = "2 hours",
+    date_labels = "%d %b\n%H:%M"
+  ) +
+  facet_wrap(~ id_gps, nrow = 1) +  
+  labs(
+    x = "Date / heure",
+    y = "Température (°C)",
+    colour = "Collier",
+    title = "Température collier vs S2M 29 juillet 2019"
+  ) +
+  theme_bw() +
+  theme(
+    legend.position = "none",        # chaque panel a déjà son id_gps en titre
+    axis.text.x = element_text(angle = 45, hjust = 1)
+  )
+
+```
+
+### Le 12 Aout 2019
+
+```{r}
+#| warning: false
+temp_collar <- readRDS(input_data_file) %>%
+  mutate(temp_S2M = ifelse(infoloc == "pb_bjorneraas", NA_real_, temp_S2M))
+temp_collar_1j <- temp_collar %>% 
+  filter(date >= as.POSIXct("2019-08-12 00:00:00", tz = "UTC"),
+         date <  as.POSIXct("2019-08-13 00:00:00", tz = "UTC")) %>% 
+  filter(!(id_gps %in% c("b2","b6")))
+
+library(dplyr)
+library(ggplot2)
+
+# On s'assure que id_gps est un facteur (plus propre pour les couleurs / facets)
+temp_collar_1j <- temp_collar_1j %>%
+  mutate(id_gps = factor(id_gps))
+
+ggplot(temp_collar_1j, aes(x = date)) +
+  # Température collier : une courbe par collier (couleur inutile mais possible)
+  geom_line(aes(y = temp, colour = id_gps), linewidth = 0.6, alpha = 0.9) +
+  # Température S2M : une courbe noire
+  geom_line(aes(y = temp_S2M), colour = "black", linewidth = 0.8) +
+  scale_x_datetime(
+    date_breaks = "2 hours",
+    date_labels = "%d %b\n%H:%M"
+  ) +
+  facet_wrap(~ id_gps, nrow = 1) +  
+  labs(
+    x = "Date / heure",
+    y = "Température (°C)",
+    colour = "Collier",
+    title = "Température collier vs S2M 12 Aout 2019"
+  ) +
+  theme_bw() +
+  theme(
+    legend.position = "none",        # chaque panel a déjà son id_gps en titre
+    axis.text.x = element_text(angle = 45, hjust = 1)
+  )
+
+```
+
+### Le 17 Aout 2019
+
+```{r}
+#| warning: false
+temp_collar <- readRDS(input_data_file) %>%
+  mutate(temp_S2M = ifelse(infoloc == "pb_bjorneraas", NA_real_, temp_S2M))
+temp_collar_1j <- temp_collar %>% 
+  filter(date >= as.POSIXct("2019-08-17 00:00:00", tz = "UTC"),
+         date <  as.POSIXct("2019-08-18 00:00:00", tz = "UTC")) %>% 
+  filter(!(id_gps %in% c("b2","b6")))
+
+library(dplyr)
+library(ggplot2)
+
+# On s'assure que id_gps est un facteur (plus propre pour les couleurs / facets)
+temp_collar_1j <- temp_collar_1j %>%
+  mutate(id_gps = factor(id_gps))
+
+ggplot(temp_collar_1j, aes(x = date)) +
+  # Température collier : une courbe par collier (couleur inutile mais possible)
+  geom_line(aes(y = temp, colour = id_gps), linewidth = 0.6, alpha = 0.9) +
+  # Température S2M : une courbe noire
+  geom_line(aes(y = temp_S2M), colour = "black", linewidth = 0.8) +
+  scale_x_datetime(
+    date_breaks = "2 hours",
+    date_labels = "%d %b\n%H:%M"
+  ) +
+  facet_wrap(~ id_gps, nrow = 1) +  
+  labs(
+    x = "Date / heure",
+    y = "Température (°C)",
+    colour = "Collier",
+    title = "Température collier vs S2M 17 Aout 2019"
+  ) +
+  theme_bw() +
+  theme(
+    legend.position = "none",        # chaque panel a déjà son id_gps en titre
+    axis.text.x = element_text(angle = 45, hjust = 1)
+  )
+
+```
+
+```         
+```
+
+## A l'echelle de la semaine
+
+```{r}
+#| warning: false
+temp_collar <- readRDS(input_data_file) %>%
+  mutate(temp_S2M = ifelse(infoloc == "pb_bjorneraas", NA_real_, temp_S2M))
+temp_collar_7j <- temp_collar %>% 
+  filter(date >= as.POSIXct("2019-08-01 00:00:00", tz = "UTC"),
+         date <  as.POSIXct("2019-08-08 00:00:00", tz = "UTC")) %>% 
+  filter(!(id_gps %in% c("b2","b6")))
+
+library(dplyr)
+library(ggplot2)
+
+# On s'assure que id_gps est un facteur (plus propre pour les couleurs / facets)
+temp_collar_7j <- temp_collar_7j %>%
+  mutate(id_gps = factor(id_gps))
+
+ggplot(temp_collar_7j, aes(x = date)) +
+  # Température collier : une courbe par collier
+  geom_line(aes(y = temp, colour = id_gps), linewidth = 0.6, alpha = 0.9) +
+  # Température S2M : une courbe noire
+  geom_line(aes(y = temp_S2M), colour = "black", linewidth = 0.8) +
+  scale_x_datetime(
+    date_breaks = "6 hours",                       # graduations toutes les 6 h
+    date_labels = "%d %b\n%H:%M"                   # jour + mois + heure
+  ) +
+  labs(
+    x = "Date / heure",
+    y = "Température (°C)",
+    colour = "Collier",
+    title = "Température collier vs S2M (7 jours)"
+  ) +
+  theme_bw() +
+  theme(
+    legend.position = "bottom"
+  )
+```
+
+## A l'echelle de la saison
+
+```{r}
+#| message: false
+#| warning: false
+library(dplyr)
+library(ggplot2)
+
+temp_collar <- readRDS(input_data_file) %>%
+  mutate(
+    temp_S2M = ifelse(infoloc == "pb_bjorneraas", NA_real_, temp_S2M),
+    date     = as.POSIXct(date, tz = "UTC")
+  )
+
+## 2. Moyenne journalière par collier, puis moyenne des colliers ----
+temp_daily <- temp_collar %>%
+  mutate(day = as.Date(date)) %>%
+  # 1) moyenne journalière PAR collier
+  group_by(day, id_gps) %>%
+  summarise(
+    temp_mean_collier     = mean(temp,    na.rm = TRUE),
+    temp_S2M_mean_collier = mean(temp_S2M, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  # 2) moyenne entre colliers (tous les colliers ont le même poids)
+  group_by(day) %>%
+  summarise(
+    temp_mean     = mean(temp_mean_collier,     na.rm = TRUE),
+    temp_S2M_mean = mean(temp_S2M_mean_collier, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+## 3. Plot final : 1 point / jour, 2 courbes sur toute la saison ----
+ggplot(temp_daily, aes(x = day)) +
+  geom_line(aes(y = temp_mean,     colour = "Collier"), linewidth = 0.8) +
+  geom_point(aes(y = temp_mean,    colour = "Collier"), size = 1.2) +
+  geom_line(aes(y = temp_S2M_mean, colour = "S2M"),     linewidth = 0.8) +
+  geom_point(aes(y = temp_S2M_mean,colour = "S2M"),     size = 1.2) +
+  scale_colour_manual(
+    values = c("Collier" = "red", "S2M" = "black"),
+    breaks = c("Collier", "S2M"),
+    labels = c("Température collier", "Température S2M")
+  ) +
+  labs(
+    x = "Jour",
+    y = "Température moyenne journalière (°C)",
+    colour = "",
+    title = "Température moyenne journalière (moyenne des colliers) – colliers vs S2M (toute la saison)"
+  ) +
+  theme_bw() +
+  theme(
+    legend.position = "bottom"
+  )
+
+```
+
+
+
+
+```{r}
+
+
+
+#| message: false
+#| warning: false
+#| include: false
+library(dplyr)
+source("config.R")
+YEAR = 2019
+alpage = "Sept-Laux"
+alpages = "Sept-Laux"
+## INPUT ----
+  collar_thermal_output_dir <- file.path(output_dir, "3. Collars_thermal_refuge")
+  input_data_file <- file.path(collar_thermal_output_dir,paste0("Collars_thermal_refuge_", YEAR, "_", alpage, ".rds"))
+  
+  
+  
+```
+
+```{r}
+
+#| message: false
+#| warning: false
+library(dplyr)
+library(ggplot2)
+
+
+temp_collar <- readRDS(input_data_file) %>%
+  mutate(temp_S2M = ifelse(infoloc == "pb_bjorneraas", NA_real_, temp_S2M))
+
+temp_collar_1j <- temp_collar %>% 
+  filter(date >= as.POSIXct("2019-08-01 00:00:00", tz = "UTC"),
+         date <  as.POSIXct("2019-08-02 00:00:00", tz = "UTC")) %>% 
+  filter(!(id_gps %in% c("b2","b6"))) %>% 
+  mutate(id_gps = factor(id_gps))
+
+## facteur pour ramener l'anomalie sur l'échelle de la température
+range_temp <- range(temp_collar_1j$temp, na.rm = TRUE)
+range_anom <- range(temp_collar_1j$anom_thermal_refuge, na.rm = TRUE)
+
+if (diff(range_anom) == 0) {
+  coef_anom <- 1
+} else {
+  coef_anom <- diff(range_temp) / diff(range_anom)
+}
+
+ggplot(temp_collar_1j, aes(x = date)) +
+  # Température collier
+  geom_line(aes(y = temp, colour = id_gps), linewidth = 0.6, alpha = 0.9) +
+  # Température S2M
+  geom_line(aes(y = temp_S2M), colour = "black", linewidth = 0.8) +
+  # Anomalie d'insolation (axe secondaire)
+  geom_line(aes(y = anom_thermal_refuge * coef_anom),
+            colour = "red", linewidth = 0.8, linetype = "dashed") +
+  scale_x_datetime(
+    date_breaks = "2 hours",
+    date_labels = "%d %b\n%H:%M"
+  ) +
+  scale_y_continuous(
+    name = "Température (°C)",
+    sec.axis = sec_axis(~ . / coef_anom,
+                        name = "Anomalie d'insolation")
+  ) +
+  facet_wrap(~ id_gps, nrow = 1) +
+  labs(
+    x = "Date / heure",
+    colour = "Collier",
+    title = "Température collier, S2M et anomalie d'insolation – 01 Août 2019"
+  ) +
+  theme_bw() +
+  theme(
+    legend.position = "none",
+    axis.text.x = element_text(angle = 45, hjust = 1)
+  )
+```
+
+
+```{r}
+
+#| message: false
+#| warning: false
+library(dplyr)
+library(ggplot2)
+
+
+temp_collar <- readRDS(input_data_file) %>%
+  mutate(temp_S2M = ifelse(infoloc == "pb_bjorneraas", NA_real_, temp_S2M))
+
+temp_collar_1j <- temp_collar %>% 
+  filter(date >= as.POSIXct("2019-08-10 00:00:00", tz = "UTC"),
+         date <  as.POSIXct("2019-08-11 00:00:00", tz = "UTC")) %>% 
+  filter(!(id_gps %in% c("b2","b6"))) %>% 
+  mutate(id_gps = factor(id_gps))
+
+## facteur pour ramener l'anomalie sur l'échelle de la température
+range_temp <- range(temp_collar_1j$temp, na.rm = TRUE)
+range_anom <- range(temp_collar_1j$anom_thermal_refuge, na.rm = TRUE)
+
+if (diff(range_anom) == 0) {
+  coef_anom <- 1
+} else {
+  coef_anom <- diff(range_temp) / diff(range_anom)
+}
+
+ggplot(temp_collar_1j, aes(x = date)) +
+  # Température collier
+  geom_line(aes(y = temp, colour = id_gps), linewidth = 0.6, alpha = 0.9) +
+  # Température S2M
+  geom_line(aes(y = temp_S2M), colour = "black", linewidth = 0.8) +
+  # Anomalie d'insolation (axe secondaire)
+  geom_line(aes(y = anom_thermal_refuge * coef_anom),
+            colour = "red", linewidth = 0.8, linetype = "dashed") +
+  scale_x_datetime(
+    date_breaks = "2 hours",
+    date_labels = "%d %b\n%H:%M"
+  ) +
+  scale_y_continuous(
+    name = "Température (°C)",
+    sec.axis = sec_axis(~ . / coef_anom,
+                        name = "Anomalie d'insolation")
+  ) +
+  facet_wrap(~ id_gps, nrow = 1) +
+  labs(
+    x = "Date / heure",
+    colour = "Collier",
+    title = "Température collier, S2M et anomalie d'insolation – 01 Août 2019"
+  ) +
+  theme_bw() +
+  theme(
+    legend.position = "none",
+    axis.text.x = element_text(angle = 45, hjust = 1)
+  )
+```
+
