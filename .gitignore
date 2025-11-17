@@ -1,0 +1,26 @@
+# Ignorer tout sauf la structure des dossiers
+
+# Partager entièrement le dossier Functions/
+!functions/
+
+
+# Ignorer tout le dossier data sauf Colliers_9999_brutes
+inputs/*
+
+
+# outputs/ (partagé mais vide sauf .gitkeep)
+outputs/*
+
+
+# Scripts à garder
+!config.R
+!Collar_temperature.R
+
+# Ignorer fichiers temporaires et spécifiques à RStudio
+*.Rhistory
+*.Rproj.user
+*.RData
+*.log
+.DS_Store
+Thumbs.db
+.Rproj.user
